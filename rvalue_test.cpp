@@ -69,7 +69,16 @@ private:
 public:
 	explicit FooClass() = default;
 
-	/* key type is rvalue reference
+	/* key is lvalue const reference (accept lvalue and also rvalue if there's no rvalue reference overloading)
+	 * value is forwarding reference
+	 */
+	template <typename ValueType>
+	void foo_member(const T& key, ValueType&& value) {
+		foo_member_internal(key, value); // call by lvalue
+		foo_member_internal(key, std::forward<ValueType>(value)); // call by what type it is
+	}
+
+	/* key type is rvalue reference (accept only rvalue)
 	 * value type is forwarding reference
 	 */
 	template <typename ValueType>
@@ -78,14 +87,6 @@ public:
 		foo_member_internal(std::move(key), std::forward<ValueType>(value)); // call by what type it is
 	}
 
-	/* key is lvalue const reference
-	 * value is forwarding reference
-	 */
-	template <typename ValueType>
-	void foo_member(const T& key, ValueType&& value) {
-		foo_member_internal(key, value); // call by lvalue
-		foo_member_internal(key, std::forward<ValueType>(value)); // call by what type it is
-	}
 };
 
 
