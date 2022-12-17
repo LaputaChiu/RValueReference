@@ -1,22 +1,33 @@
 #include <iostream>
 #include <type_traits>
+#include <unordered_map>
+
+template <typename T>
+static void CheckType(T&& t) {
+	if constexpr (std::is_rvalue_reference_v<decltype(t)>) {
+		std::cout << "  rvalue reference" << std::endl;
+	}
+	else if constexpr (std::is_lvalue_reference_v<decltype(t)>) {
+		std::cout << "  lvalue reference" << std::endl;
+	}
+}
 
 // for only r-value reference
-static void foo(int &&a)
+static void foo(int&& a)
 {
-    std::cout << "      int&&" << std::endl;
+	std::cout << "      int&&" << std::endl;
 }
 
 // for only l-value reference
-static void foo(int &a)
+static void foo(int& a)
 {
-    std::cout << "      int&" << std::endl;
+	std::cout << "      int&" << std::endl;
 }
 
 // for both l-value and r-value reference
 static void foo(const int& a)
 {
-    std::cout << "      const int&" << std::endl;
+	std::cout << "      const int&" << std::endl;
 }
 
 // for both l-value and r-value reference (extra one copy)
@@ -25,73 +36,78 @@ static void foo(const int& a)
 //    std::cout << "int" << std::endl;
 //}
 
+void LambdaTest() {
+
+	auto foo_lambda = [](auto&& arg)
+	{
+		CheckType(std::forward<decltype(arg)>(arg));
+
+		foo(arg); // call by lvalue
+		foo(std::forward<decltype(arg)>(arg));  // call by what type it is
+	};
+
+	int x = 1;
+
+	std::cout << "arg type is rvalue" << std::endl;
+	foo_lambda(2);
+
+	std::cout << "arg type is lvalue" << std::endl;
+	foo_lambda(x);
+}
+
+
+
 template <typename T>
 class FooClass {
+private:
+	template <typename KeyType, typename ValueType>
+	void foo_member_internal(KeyType&& key, ValueType&& value) {
+		CheckType(std::forward<KeyType>(key));
+		CheckType(std::forward<ValueType>(value));
+	}
+
 public:
-    explicit FooClass() = default;
+	explicit FooClass() = default;
 
-    /* t is rvalue reference
-     * y is forwarding reference
-     */
-    template <typename Y>
-    void foo_member(T&& t, Y&& y) {
-        if constexpr (std::is_rvalue_reference_v<decltype(y)>) {
-            std::cout << "  forwarding reference deduced to rvalue reference" << std::endl;
-        }
-        else if constexpr (std::is_lvalue_reference_v<decltype(y)>) {
-            std::cout << "  forwarding reference deduced to lvalue reference" << std::endl;
-        }
-        else {
-            std::cout << "  forwarding reference deduced to ???" << std::endl;
-        }
+	/* key type is rvalue reference
+	 * value type is forwarding reference
+	 */
+	template <typename ValueType>
+	void foo_member(T&& key, ValueType&& value) {
+		foo_member_internal(key, value); // call by lvalue
+		foo_member_internal(std::move(key), std::forward<ValueType>(value)); // call by what type it is
+	}
 
-        std::cout << "  Test on rvalue reference" << std::endl;
-        std::cout << "  -> call by lvalue" << std::endl;
-        foo(t); // call lvalue overload
-        std::cout << "  -> call by std::move" << std::endl;
-        foo(std::move(t)); // call rvalue overload
-
-        std::cout << "  Test on forwarding reference" << std::endl;
-        std::cout << "  -> call by lvalue" << std::endl;
-        foo(y); // call lvalue overload
-        std::cout << "  -> call by std::forward" << std::endl;
-        foo(std::forward<Y>(y));  // can call lvalue or rvalue overload, decided by deduced type of Y
-    }
+	/* key is lvalue const reference
+	 * value is forwarding reference
+	 */
+	template <typename ValueType>
+	void foo_member(const T& key, ValueType&& value) {
+		foo_member_internal(key, value); // call by lvalue
+		foo_member_internal(key, std::forward<ValueType>(value)); // call by what type it is
+	}
 };
+
 
 int main()
 {
-    auto foo_lambda = [](auto&& arg)
-    {
-        if constexpr (std::is_rvalue_reference_v<decltype(arg)>) {
-            std::cout << "  forwarding reference deduced to rvalue reference" << std::endl;
-        }
-        else if constexpr (std::is_lvalue_reference_v<decltype(arg)>) {
-            std::cout << "  forwarding reference deduced to lvalue reference" << std::endl;
-        }
-        else {
-            std::cout << "  forwarding reference deduced to ???" << std::endl;
-        }
+	int x = 1;
 
-        std::cout << "  Test on forwarding reference" << std::endl;
-        std::cout << "  -> call by lvalue" << std::endl;
-        foo(arg); // call lvalue overload
-        std::cout << "  -> call by std::forward" << std::endl;
-        foo(std::forward<decltype(arg)>(arg));  // can call lvalue or rvalue overload, decided by deduced type of Y
-    };
+	FooClass<int> fooClass;
 
-    int x = 1;
+	std::cout << "key type is rvalue, value type is rvalue" << std::endl;
+	fooClass.foo_member(2, 2);
 
-    FooClass<int> fooClass;
-    std::cout << "[Class] Test pass rvalue to forwarding reference" << std::endl;
-    fooClass.foo_member(2, 2);
-    std::cout << "[Class] Test pass lvalue to forwarding reference" << std::endl;
-    fooClass.foo_member(2, x);
+	std::cout << "key type is rvalue, value type is lvalue" << std::endl;
+	fooClass.foo_member(2, x);
 
-    std::cout << "[Lambda] Test pass rvalue to forwarding reference" << std::endl;
-    foo_lambda(2);
-    std::cout << "[Lambda] Test pass lvalue to forwarding reference" << std::endl;
-    foo_lambda(x);
+	std::cout << "key type is lvalue, value type is rvalue" << std::endl;
+	fooClass.foo_member(x, 2);
 
-    return 0;
+	std::cout << "key type is lvalue, value type is lvalue" << std::endl;
+	fooClass.foo_member(x, x);
+
+	LambdaTest();
+
+	return 0;
 }
