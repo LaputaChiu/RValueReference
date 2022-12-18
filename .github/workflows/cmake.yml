@@ -36,22 +36,12 @@ jobs:
       - name: generate build scripts for windows
         if: startsWith(matrix.os, 'windows')
         run: |
-          cmake \
-            -B build . \
-            -G "Visual Studio 17 2022" \
-            -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} \
-            -DCMAKE_CXX_COMPILER=cl \
-            -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+          cmake -B build -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DCMAKE_CXX_COMPILER=cl -DCMAKE_CXX_STANDARD=${{ matrix.std }}
             
       - name: generate build scripts for linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          cmake \
-            -B build . \
-            -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            
+          cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+                      
       - name: build
         run: cmake --build build
