@@ -1,0 +1,34 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [Win32, x64, Arm64]
+        std: [11, 14, 17, 20]
+        configuration: [Debug, Release]
+
+    steps:
+      - name: check out source code
+        uses: actions/checkout@v3
+
+      - name: setup build enviroment
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: generate build scripts
+        shell: pwsh
+        run: |
+          cmake `
+          -B build `
+          -G "Visual Studio 17 2022" `
+          -A ${{ matrix.arch }} `
+          -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} `
+          -DCMAKE_CXX_COMPILER=cl `
+          -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+            
+      - name: build
+        run: cmake --build build

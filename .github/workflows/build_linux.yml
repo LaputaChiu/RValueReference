@@ -1,0 +1,36 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+        std: [11, 14, 17, 20]
+        configuration: [Debug, Release]
+
+    steps:
+      - name: check out source code
+        uses: actions/checkout@v3
+
+      - name: setup ninja
+        uses: ashutoshvarma/setup-ninja@master
+        
+      - name: setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.13
+
+      - name: generate build scripts
+        shell: bash
+        run: |
+          cmake \
+          -B build \
+          -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+          -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+                      
+      - name: build
+        run: cmake --build build
