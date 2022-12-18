@@ -1,5 +1,7 @@
 [![License][license-image]][license-url]
-[![Actions Status](https://github.com/LaputaChiu/RValueReference/workflows/Build/badge.svg)](https://github.com/LaputaChiu/RValueReference/actions)
+[![build-windows](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_windows.yml/badge.svg)](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_windows.yml)
+[![build-linux](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_linux.yml/badge.svg)](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_linux.yml)
+[![build-macos](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_macos.yml/badge.svg)](https://github.com/LaputaChiu/RValueReference/actions/workflows/build_macos.yml)
 
 # Test for rvalue reference v.s forwarding reference
 
